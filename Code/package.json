@@ -1,0 +1,15 @@
+{
+  "name": "tasker-ping",
+  "version": "0.0.0",
+  "author": "author",
+  "main": "app.js",
+  "scripts": {
+    "build": "tsc -p ./",
+    "test": "npm run build && node_modules\\.bin\\mocha --recursive",
+    "start": "node app.js"
+  },
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4"
+  }
+}
