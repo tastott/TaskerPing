@@ -3,7 +3,8 @@ export interface LocationFix {
 	Lat: number;
 	Lng: number;
 	Time: Date;
-	Age: number;
+	Type:string;
+	SpeedMps: number;
 }
 
 export class PingResponder { 
@@ -14,21 +15,23 @@ export class PingResponder {
 
 	GetBestLocationFix(): LocationFix {
 		var latLngPattern = /([^,]+),(.+)/;
-		var maxAge = 1200; //20 mins
 
 		return [
-				{ LatLngVar: "%LOC", TimeVar: "%LOCTMS" },
-				{ LatLngVar: "%LOCN", TimeVar: "%LOCNTMS" }
+				{ Type: "GPS", LatLngVar: "%LOC", TimeVar: "%LOCTMS", SpeedVar: "%LOCSPD", Precedence: 1 },
+				{ Type: "Network", LatLngVar: "%LOCN", TimeVar: "%LOCNTMS", SpeedVar: null, Precedence: 0 }
 			]
 			.map(l => {
 				var latLngMatch: RegExpMatchArray;
 				if (this.getGlobal(l.LatLngVar) && (latLngMatch = this.getGlobal(l.LatLngVar).match(latLngPattern))) {
 					var age = this.getGlobal(l.TimeVar) - this.getGlobal("%TIMES");
 					return {
+						Type: l.Type,
 						Lat: parseFloat(latLngMatch[1]),
 						Lng: parseFloat(latLngMatch[2]),
 						Time: new Date(this.getGlobal(l.TimeVar) * 1000),
-						Age: age
+						Age: age,
+						SpeedMps: l.SpeedVar ? this.getGlobal(l.SpeedVar) : null,
+						Precedence: l.Precedence
 					};
 				}
 				else {
@@ -36,9 +39,16 @@ export class PingResponder {
 				}
 			})
 			.filter(l => !!l)
-			.filter(l => l.Age < maxAge)
-			.sort((a, b) => a.Age - b.Age)
-		[0];
+			.filter(l => l.Age < this.maxAge)
+			.sort((a, b) => b.Precedence - a.Precedence)
+			.map(lf => ({
+				Type: lf.Type,
+				Lat: lf.Lat,
+				Lng: lf.Lng,
+				Time: lf.Time,
+				SpeedMps: lf.SpeedMps
+			}))
+		[0] || null;
 	}
 
 	ComposePingResponse(): string {
