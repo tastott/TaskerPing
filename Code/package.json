@@ -4,7 +4,7 @@
   "author": "author",
   "main": "app.js",
   "scripts": {
-    "build": "tsc -p ./",
+    "build": "tsc -p ./ && node build.js",
     "test": "npm run build && node_modules\\.bin\\mocha --recursive",
     "start": "node app.js"
   },
