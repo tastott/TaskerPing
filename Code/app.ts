@@ -14,16 +14,16 @@ export class PingResponder {
 	}
 
 	GetBestLocationFix(): LocationFix {
-		var latLngPattern = /([^,]+),(.+)/;
+		let latLngPattern = /([^,]+),(.+)/;
 
 		return [
 				{ Type: "GPS", LatLngVar: "%LOC", TimeVar: "%LOCTMS", SpeedVar: "%LOCSPD", Precedence: 1 },
 				{ Type: "Network", LatLngVar: "%LOCN", TimeVar: "%LOCNTMS", SpeedVar: null, Precedence: 0 }
 			]
 			.map(l => {
-				var latLngMatch: RegExpMatchArray;
+				let latLngMatch: RegExpMatchArray;
 				if (this.getGlobal(l.LatLngVar) && (latLngMatch = this.getGlobal(l.LatLngVar).match(latLngPattern))) {
-					var age = this.getGlobal(l.TimeVar) - this.getGlobal("%TIMES");
+					let age = this.getGlobal(l.TimeVar) - this.getGlobal("%TIMES");
 					return {
 						Type: l.Type,
 						Lat: parseFloat(latLngMatch[1]),
@@ -51,15 +51,25 @@ export class PingResponder {
 		[0] || null;
 	}
 
-	ComposePingResponse(): string {
-		var bestLocation = this.GetBestLocationFix();
+	ComposeResponse(): string {
+		let fix = this.GetBestLocationFix();
+		return this.ComposeReponseFromFix(fix);
+	}
+	
+	ComposeReponseFromFix(bestLocation: LocationFix) {
 
 		if (bestLocation) {
-			var gmapsUrl = `http;//maps.google.com/maps?z=12&t=m&q=loc:${bestLocation.Lat}+${bestLocation.Lng}`;
-			return gmapsUrl;
+			let hhmmss = bestLocation.Time.toTimeString().split(' ')[0];
+			let smsbody = `At ${hhmmss}, I'm here: http://maps.google.com/maps?z=12&t=m&q=loc:${bestLocation.Lat}+${bestLocation.Lng} .` ;
+			if(bestLocation.SpeedMps < 0.3) smsbody += " I'm stationary.";
+			else { 
+				let speedKph = bestLocation.SpeedMps * 3.6;
+				smsbody += ` I'm moving at ${speedKph.toFixed(0)}kph.`;
+			}
+			return smsbody;
 		}
 		else {
-			return "Unable to get location";
+			return "Sorry, unable to get a recent location fix.";
 		}
 	}
 }

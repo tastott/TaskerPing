@@ -67,4 +67,41 @@ describe("Ping Responder", () => {
 		var fix = responder.GetBestLocationFix();
 		expect(fix).to.be.null;
 	})
+	
+	it('Should compose correct response while moving very slowly', () => {
+		var responder = new app.PingResponder(null, 0);
+		var fix: app.LocationFix = {
+			Type: 'GPS',
+			Lat: 1,
+			Lng: 2,
+			Time: new Date(2015, 1, 1, 12, 13, 43),
+			SpeedMps: 0.1
+		};
+		
+		var expected = "At 12:13:43, I'm here: http://maps.google.com/maps?z=12&t=m&q=loc:1+2 . I'm stationary.";
+		var response = responder.ComposeReponseFromFix(fix);
+		expect(response).to.be.equal(expected);
+	})
+	
+	it('Should compose correct response while moving', () => {
+		var responder = new app.PingResponder(null, 0);
+		var fix: app.LocationFix = {
+			Type: 'GPS',
+			Lat: 1,
+			Lng: 2,
+			Time: new Date(2015, 1, 1, 12, 13, 43),
+			SpeedMps: 10
+		};
+		
+		var expected = "At 12:13:43, I'm here: http://maps.google.com/maps?z=12&t=m&q=loc:1+2 . I'm moving at 36kph.";
+		var response = responder.ComposeReponseFromFix(fix);
+		expect(response).to.be.equal(expected);
+	})
+	
+	it('Should compose correct response while moving', () => {
+		var responder = new app.PingResponder(null, 0);
+		var expected = "Sorry, unable to get a recent location fix.";
+		var response = responder.ComposeReponseFromFix(null);
+		expect(response).to.be.equal(expected);
+	})
 })
